@@ -1,50 +1,58 @@
 # Simple MPP Phone Remote SDK Example
 
+## Requirements
+
+* Python 3.7+
+
 ## Host Computer Setup
 
-  1. Copy this script to the host computer and make sure Python 2.7 or
-     later is installed.
-     
-  1. Use the following command to install Python `websocker_server`
-     package:
-     
-     ```bash
-     pip install git+https://github.com/Pithikos/python-websocket-server
-     ```
-      
-      OR
-      
-      Download/copy `websocket_server.py` from https://github.com/Pithikos/python-websocket-server to be in same directory as script
-      
-  > Note: the script's WebSocket server port is hard coded to be `12345`
+1. Clone this repository to the host PC:
+
+   ```bash
+   git clone https://github.com/CiscoDevNet/multiplatform-phones.git
+   ```
+
+   and change into the directory:
+
+   ```bash
+   cd mutiplatform-phones
+   ```
+
+1. (Optional) Create and activate a [Python virtual environment](https://docs.python.org/3/library/venv.html):
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+1. Install Python dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+Note: the server websocket port is hard coded as `12345`.  Modify `remote_sdk_play.py` accordingly to change this to another port:
+
+```python
+self.server = WebsocketServer(port=12345, host="0.0.0.0", loglevel=LOG_LEVEL)
+```
   
 ## Phone Setup
 
-  1. For MPP 11.3.1 or later phones go to **Phone** tab, and
-     configure **Control Server URL** field to be:
+For MPP 11.3.1 or later phones, go to **Phone** tab, and configure the **Control Server URL** field:
      
-     ```
-     ws://<script-computer-ip>:12345/
-     ```
-     
-     Where `<script_computer-ip>` is the IP of the host computer where
-     script will be running.
-     
-  > The phones must be able to make an HTTP/WebSocket network
-     connection to the host computer where script will be running.
+```
+ws://<script-computer-ip>:12345/
+```
+   
+where `<script_computer-ip>` is the IP of the host computer where the websocket server will be running.
+   
+> **Note:** The phones must be able to make an outbound HTTP/WebSocket network
+     connection to the host computer.
   
-## Running the script
+## Running the Websocket Server
 
-1. Run the script using Python 2.7 or later:
-    
-    ```bash
-    python remote_sdk_example.py
-    ``` 
-    
-1. To view the JSON payloads, run the script using the `--debug` option:
+Launch the websocket server (with debugging enabled):
 
-    ```bash
-    python remote_sdk_example.py --debug
-    ```
-  
-  Or modify the script to set:  `DEBUG = True`
+```bash
+python remote_sdk_play.py --debug
+```

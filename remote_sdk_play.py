@@ -50,7 +50,8 @@ import threading
 import time
 from websocket_server import WebsocketServer
 
-DEBUG = False
+LOG_LEVEL = logging.WARNING
+
 
 class RemotePhone(object):
     def __init__(self, server, client):
@@ -78,7 +79,6 @@ class RemotePhone(object):
         self.response_event.clear()
 
     def make_api_call(self, payload):
-
         if self.response_event.is_set():
             raise Exception("Only one API call may be in 'in flight' at a time")
 
@@ -93,7 +93,7 @@ class RemotePhone(object):
 
     def incoming_message(self, server, client, message):
         message = json.loads(message)
-        if message['type'] == 'event':
+        if message["type"] == "event":
             if DEBUG:
                 print("Ignoring event {}".format(message))
             return
@@ -103,6 +103,7 @@ class RemotePhone(object):
         # alert that we have a response back to client
         self.response_event.set()
 
+
 class RemoteSdkServer(object):
     def __init__(self):
         # index clients by IP
@@ -111,18 +112,18 @@ class RemoteSdkServer(object):
         #
         self.client_connected_event = threading.Event()
 
-        #self.server = WebsocketServer(12345, host='0.0.0.0', loglevel=logging.INFO)
-        self.server = WebsocketServer(12345, host='0.0.0.0')
+        self.server = WebsocketServer(port=12345, host="0.0.0.0", loglevel=LOG_LEVEL)
         self.server.set_fn_new_client(self.new_client)
         self.server.set_fn_client_left(self.lost_client)
         self.server.set_fn_message_received(self.new_message)
-        t1 = threading.Thread(name='websocket_server_thread',
-                              target=self.server.run_forever)
+        t1 = threading.Thread(
+            name="websocket_server_thread", target=self.server.run_forever
+        )
         t1.daemon = True
         t1.start()
 
     def new_client(self, client, server):
-        ip = client['address'][0]
+        ip = client["address"][0]
 
         print("Phone {} connected".format(ip))
         if DEBUG:
@@ -139,9 +140,8 @@ class RemoteSdkServer(object):
         self.client_connected_event.set()
         self.client_connected_event.clear()
 
-
     def lost_client(self, client, server):
-        ip = client['address'][0]
+        ip = client["address"][0]
         print("Phone {} disconnected".format(ip))
         phone = self.phone_dict.get(ip, None)
         if phone:
@@ -149,12 +149,12 @@ class RemoteSdkServer(object):
         self.client_connected_event.clear()
 
     def new_message(self, client, server, message):
-        ip = client['address'][0]
+        ip = client["address"][0]
         phone = self.phone_dict.get(ip, None)
         phone.incoming_message(server, client, message)
 
-def basic_call():
 
+def basic_call():
     server = RemoteSdkServer()
 
     print("\nWaiting for phones to connect...")
@@ -165,48 +165,65 @@ def basic_call():
     oPhone1, oPhone2 = list(server.phone_dict.values())[:2]
 
     print("\nGet Phone2 DND.")
-    resp = oPhone2.make_api_call({"Request-URI": "/api/Config/v1/GetParams", 'params': ['DND_Setting']})
-    phone2_DND = resp['result']['paramvalues']['DND_Setting']
+    resp = oPhone2.make_api_call(
+        {"Request-URI": "/api/Config/v1/GetParams", "params": ["DND_Setting"]}
+    )
+    phone2_DND = resp["result"]["paramvalues"]["DND_Setting"]
     print("\nPhone 2 DND is ", phone2_DND)
 
     print("\nSet Phone2 DND.")
-    resp = oPhone2.make_api_call({"Request-URI": "/api/Config/v1/SetParams", 'params': {'DND_Setting':'No'}})
-
+    resp = oPhone2.make_api_call(
+        {"Request-URI": "/api/Config/v1/SetParams", "params": {"DND_Setting": "No"}}
+    )
 
     print("\nGet Phone2's number dynamically from the phone config.")
-    resp = oPhone2.make_api_call({"Request-URI": "/api/Config/v1/GetParams", 'params': ['User_ID_1_']})
-    phone2_number = resp['result']['paramvalues']['User_ID_1_']
+    resp = oPhone2.make_api_call(
+        {"Request-URI": "/api/Config/v1/GetParams", "params": ["User_ID_1_"]}
+    )
+    phone2_number = resp["result"]["paramvalues"]["User_ID_1_"]
 
-    print('\nCall Phone1 -> Phone2')
-    resp = oPhone1.make_api_call({"Request-URI": "/api/Call/v1/Dial", 'line':1, 'number': phone2_number})
+    print("\nCall Phone1 -> Phone2")
+    resp = oPhone1.make_api_call(
+        {"Request-URI": "/api/Call/v1/Dial", "line": 1, "number": phone2_number}
+    )
 
-    print('\nWait for Phone2 to be ringing...')
+    print("\nWait for Phone2 to be ringing...")
     time.sleep(2)
 
-    print('\nAnswer Phone2')
-    oPhone2.make_api_call({"Request-URI": "/api/Call/v1/Answer", 'line':1, 'callId': 0})
+    print("\nAnswer Phone2")
+    oPhone2.make_api_call(
+        {"Request-URI": "/api/Call/v1/Answer", "line": 1, "callId": 0}
+    )
     time.sleep(2)
 
-    print('\nGet Screen Capture')
-    oPhone2.make_api_call({"Request-URI": "/api/Ui/v1/GetDeviceScreenshot", "uploadMethod": "PUT", 'url': "http://10.201.83.50:8000/"})
-    
-    print('\nGet Status')
+    print("\nGet Screen Capture")
+    oPhone2.make_api_call(
+        {
+            "Request-URI": "/api/Ui/v1/GetDeviceScreenshot",
+            "uploadMethod": "PUT",
+            "url": "http://10.201.83.50:8000/",
+        }
+    )
+
+    print("\nGet Status")
     oPhone1.make_api_call({"Request-URI": "/api/Serviceability/v1/GetStatusFile"})
-    
-    print('\nLeave call up for 5 seconds')
+
+    print("\nLeave call up for 5 seconds")
     time.sleep(5)
 
-    print('\nHangup')
-    oPhone2.make_api_call({"Request-URI": "/api/Call/v1/Hangup", 'line':1, 'callId': 0})
+    print("\nHangup")
+    oPhone2.make_api_call(
+        {"Request-URI": "/api/Call/v1/Hangup", "line": 1, "callId": 0}
+    )
 
-    print('\nScript finished.')
+    print("\nScript finished.")
+
 
 def do_all():
-    global DEBUG
-    if len(sys.argv) == 2 and sys.argv[1] == '--debug':
-        DEBUG = True
+    if len(sys.argv) == 2 and sys.argv[1] == "--debug":
+        LOG_LEVEL = logging.DEBUG
     basic_call()
 
-if __name__ == '__main__':
-    do_all()
 
+if __name__ == "__main__":
+    do_all()
