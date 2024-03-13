@@ -51,6 +51,7 @@ import time
 from websocket_server import WebsocketServer
 
 LOG_LEVEL = logging.WARNING
+DEBUG = False
 
 
 class RemotePhone(object):
@@ -222,6 +223,7 @@ def basic_call():
 def do_all():
     if len(sys.argv) == 2 and sys.argv[1] == "--debug":
         LOG_LEVEL = logging.DEBUG
+        DEBUG = True
     basic_call()
 
 
